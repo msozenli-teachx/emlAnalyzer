@@ -1,0 +1,2 @@
+[console_scripts]
+eml-analyzer = eml_analyzer.cli:main

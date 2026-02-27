@@ -1,0 +1,15 @@
+README.md
+setup.py
+eml_analyzer/__init__.py
+eml_analyzer/cli.py
+eml_analyzer/database.py
+eml_analyzer/dateutil.py
+eml_analyzer/importer.py
+eml_analyzer/parser.py
+eml_analyzer/threads.py
+eml_analyzer.egg-info/PKG-INFO
+eml_analyzer.egg-info/SOURCES.txt
+eml_analyzer.egg-info/dependency_links.txt
+eml_analyzer.egg-info/entry_points.txt
+eml_analyzer.egg-info/requires.txt
+eml_analyzer.egg-info/top_level.txt
