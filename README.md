@@ -1,322 +1,125 @@
-# EML Analyzer
+# Video Editor
 
-A Python CLI tool for analyzing local EML (email) files. Import emails from a directory, parse headers, store them in a SQLite database, and generate statistics.
-
-## Features
-
-- **EML File Import**: Import all EML files from a directory
-- **Header Parsing**: Extract From, To, Date, Subject, Message-ID, and In-Reply-To headers
-- **Duplicate Detection**: Prevent duplicate emails from being inserted using hash-based and Message-ID detection
-- **SQLite Storage**: Efficient storage with indexed lookups
-- **Statistics**: View total messages, unique senders, and date range
-- **Thread Reconstruction**: Automatically reconstruct email conversations using Message-ID and In-Reply-To headers
-- **Interaction Analysis**: Track sender→recipient relationships and communication patterns
-- **Response Time Analysis**: Calculate timezone-aware response times between original messages and replies
-- **Time-Based Insights**: Analyze daily activity, hourly distribution, and thread lifetimes
-- **Edge Case Handling**:
-  - Missing Message-IDs
-  - Duplicate entries
-  - Mixed timezones
-  - Special characters in subjects
-  - Multi-level reply chains
-
-## Project Structure
-
-```
-eml_analyzer/
-├── eml_analyzer/
-│   ├── __init__.py           # Package initialization
-│   ├── cli.py                # CLI entry point (Click-based)
-│   ├── database.py           # SQLite database models and utilities
-│   ├── parser.py             # EML file parsing
-│   ├── importer.py           # EML file import logic
-│   ├── threads.py            # Thread reconstruction, interactions, response times, time insights
-│   └── dateutil.py           # Timezone-aware date parsing and formatting
-├── data/
-│   └── sample_emails/        # Test dataset (30 realistic emails)
-├── setup.py                  # Package setup and dependencies
-├── generate_test_data.py     # Script to generate test dataset
-├── test_workflow.py          # Workflow test script
-├── test_threads_and_interactions.py  # Thread and interaction tests
-├── test_response_times.py    # Response time analysis tests
-├── test_time_insights.py     # Time-based insights tests
-├── README.md                 # This file
-├── QUICKSTART.md             # Quick start guide
-├── PROJECT_SUMMARY.md        # Project overview
-├── THREADS_AND_INTERACTIONS.md  # Thread reconstruction documentation
-├── RESPONSE_TIME_ANALYSIS.md    # Response time analysis documentation
-└── TIME_INSIGHTS_FEATURE.md     # Time-based insights documentation
-```
-
-## Installation
-
-### Prerequisites
-- Python 3.8+
-- Click library (for CLI)
-- email-validator library (optional, for validation)
-
-### Install from source
-
-```bash
-cd eml_analyzer
-pip install -e .
-```
-
-Or install dependencies manually:
-
-```bash
-pip install click email-validator
-```
-
-## Usage
-
-### Import EML files
-
-```bash
-eml-analyzer import-emails /path/to/eml/folder
-```
-
-Example:
-```bash
-eml-analyzer import-emails ./data/sample_emails
-```
-
-Output:
-```
-Importing EML files from: ./data/sample_emails
-✓ Imported: 28 emails
-⊘ Duplicates skipped: 2
-```
-
-### View Statistics
-
-```bash
-eml-analyzer stats
-```
-
-Output:
-```
-==================================================
-EMAIL STATISTICS
-==================================================
-Total Messages:    28
-Unique Senders:    6
-Date Range:        2024-01-01T18:00:00 to Sat, 20 Jan 2024 22:15:00 -0800
-==================================================
-```
-
-### Specify Custom Database Path
-
-```bash
-eml-analyzer --db /path/to/custom.db import-emails /path/to/eml/folder
-eml-analyzer --db /path/to/custom.db stats
-```
-
-## Database Schema
-
-### emails table
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | INTEGER | Primary key (auto-increment) |
-| message_id | TEXT | Unique Message-ID header (nullable) |
-| from_addr | TEXT | Sender email address |
-| to_addr | TEXT | Recipient email address(es) |
-| date | TEXT | Email date in ISO format |
-| subject | TEXT | Email subject line (nullable) |
-| in_reply_to | TEXT | In-Reply-To header (nullable) |
-| hash | TEXT | SHA256 hash for duplicate detection |
-| created_at | TIMESTAMP | When the record was created |
-
-### Indexes
-
-- `idx_message_id` on message_id
-- `idx_from_addr` on from_addr
-- `idx_hash` on hash
-
-## Duplicate Detection
-
-The system uses two methods to detect duplicates:
-
-1. **Hash-based Detection**: Computes SHA256 hash of (from_addr, to_addr, subject, date)
-2. **Message-ID Detection**: Checks for duplicate Message-IDs (if present)
-
-This ensures that even emails without Message-IDs won't be duplicated.
-
-## Test Dataset
-
-The project includes a generated test dataset with 30 realistic emails covering:
-
-- ✓ Initial emails from different senders (5)
-- ✓ Multi-level reply chains (10)
-- ✓ Emails without Message-IDs (5)
-- ✓ Duplicate entries (3)
-- ✓ Mixed timezones (2)
-- ✓ Special characters in subjects (1)
-- ✓ Very long subjects (1)
-- ✓ No subject line (1)
-- ✓ Multiple recipients (2)
-
-### Generate Test Dataset
-
-```bash
-python generate_test_data.py
-```
-
-This creates 30 deterministic EML files in `data/sample_emails/`.
-
-### Run Workflow Test
-
-```bash
-python test_workflow.py
-```
-
-This tests:
-1. Database initialization
-2. Importing emails
-3. Statistics retrieval
-4. Duplicate detection on re-import
-
-## Advanced Features
-
-### Thread Reconstruction
-
-Automatically reconstruct email conversations using Message-ID and In-Reply-To headers:
-
-```bash
-eml-analyzer reconstruct-threads
-eml-analyzer list-threads
-eml-analyzer show-thread 1
-```
-
-See [THREADS_AND_INTERACTIONS.md](THREADS_AND_INTERACTIONS.md) for detailed documentation.
-
-### Interaction Analysis
-
-Analyze communication patterns and identify key participants:
-
-```bash
-eml-analyzer build-interactions
-eml-analyzer top-senders --limit 10
-eml-analyzer top-recipients --limit 10
-eml-analyzer dominance
-```
-
-### Response Time Analysis
-
-Calculate timezone-aware response times between original messages and replies:
-
-```bash
-eml-analyzer calculate-response-times
-eml-analyzer avg-response-time
-eml-analyzer avg-response-time-by-user
-eml-analyzer avg-response-time-to-user
-```
-
-See [RESPONSE_TIME_ANALYSIS.md](RESPONSE_TIME_ANALYSIS.md) for detailed documentation.
-
-### Time-Based Insights
-
-Analyze daily activity, hourly distribution, and thread lifetimes:
-
-```bash
-eml-analyzer calculate-time-insights
-eml-analyzer daily-activity
-eml-analyzer hourly-distribution
-eml-analyzer thread-lifetimes --limit 10 --sort lifetime
-```
-
-See [TIME_INSIGHTS_FEATURE.md](TIME_INSIGHTS_FEATURE.md) for detailed documentation.
-
-## Example Workflow
-
-```bash
-# Generate test data
-python generate_test_data.py
-
-# Import emails
-eml-analyzer import-emails ./data/sample_emails
-
-# View statistics
-eml-analyzer stats
-
-# Reconstruct threads
-eml-analyzer reconstruct-threads
-eml-analyzer list-threads
-
-# Analyze interactions
-eml-analyzer build-interactions
-eml-analyzer top-senders
-
-# Calculate response times
-eml-analyzer calculate-response-times
-eml-analyzer avg-response-time
-
-# Analyze time-based patterns
-eml-analyzer calculate-time-insights
-eml-analyzer daily-activity
-eml-analyzer hourly-distribution
-eml-analyzer thread-lifetimes
-```
+A Python-based video editing application built with PyQt6 and FFmpeg.
 
 ## Architecture
 
-### Database Layer (`database.py`)
+This project follows a modular, layered architecture designed for scalability and extensibility:
 
-- Handles SQLite connection and schema creation
-- Provides methods for inserting and querying emails
-- Implements duplicate detection logic
+```
+video_editor/
+├── core/                       # Core engine components
+│   ├── ffmpeg_engine.py        # FFmpeg process management
+│   ├── media_processor.py      # High-level media operations
+│   └── exceptions.py           # Custom exceptions
+├── tasks/                      # Task management system
+│   ├── task_manager.py         # Centralized task queue
+│   └── task_types.py           # Task definitions
+├── utils/                      # Utilities
+│   └── logging_config.py       # Logging configuration
+├── models/                     # Data models
+│   └── media.py                # Media file models
+├── gui/                        # PyQt6 UI
+│   └── main_window.py          # Main application window
+├── config/                     # Configuration
+│   └── settings.py             # App settings
+└── main.py                     # Application entry point
+```
 
-### Parser Layer (`parser.py`)
+## Features
 
-- Uses Python's built-in `email` library
-- Extracts relevant headers from EML files
-- Handles parsing errors gracefully
+### Core Engine
+- **FFmpegEngine**: Manages FFmpeg subprocesses with support for:
+  - Multiple concurrent processes
+  - Progress monitoring via stderr parsing
+  - Process cancellation
+  - Both sync and async execution
 
-### Importer Layer (`importer.py`)
+### Task Management
+- **TaskManager**: Centralized queue for media operations
+  - Priority-based scheduling
+  - Concurrent execution with configurable workers
+  - Progress and completion callbacks
+  - Task cancellation
 
-- Orchestrates the import process
-- Validates required fields (From, To)
-- Counts imported vs. duplicate emails
+### Media Processing
+- **MediaProcessor**: High-level video operations
+  - Video clipping with time range support
+  - Format conversion
+  - Audio extraction
+  - Video information retrieval
 
-### CLI Layer (`cli.py`)
+### Logging
+- Structured logging with rotation
+- Separate log files for errors
+- Colored console output
+- Component-specific loggers
 
-- Click-based command-line interface
-- Two main commands: `import-emails` and `stats`
-- Supports custom database path
+## Requirements
 
-## Error Handling
+- Python 3.10+
+- FFmpeg (must be installed and in PATH)
+- PyQt6
 
-- Invalid EML files are skipped with error messages
-- Missing required fields (From, To) are skipped
-- Database integrity errors are caught during insertion
-- File not found errors are reported clearly
+## Installation
 
-## Performance
+1. Install FFmpeg:
+   ```bash
+   # Ubuntu/Debian
+   sudo apt-get install ffmpeg
 
-- **Indexing**: Database queries use indexes on frequently accessed columns
-- **Batch Processing**: Emails are processed sequentially to minimize memory usage
-- **Hash-based Deduplication**: O(1) lookup time for duplicate detection
+   # macOS
+   brew install ffmpeg
 
-## Documentation
+   # Windows
+   # Download from https://ffmpeg.org/download.html
+   ```
 
-- **[QUICKSTART.md](QUICKSTART.md)** - Quick start guide for new users
-- **[PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)** - High-level project overview
-- **[THREADS_AND_INTERACTIONS.md](THREADS_AND_INTERACTIONS.md)** - Thread reconstruction and interaction analysis
-- **[RESPONSE_TIME_ANALYSIS.md](RESPONSE_TIME_ANALYSIS.md)** - Response time calculation and analysis
-- **[TIME_INSIGHTS_FEATURE.md](TIME_INSIGHTS_FEATURE.md)** - Daily activity, hourly distribution, and thread lifetime analysis
+2. Install Python dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-## Future Enhancements
+## Usage
 
-- Export statistics to JSON/CSV
-- Search/filter emails by sender, date range, subject
-- Detect spam patterns
-- Export selected emails
-- Web interface for browsing
-- Real-time email monitoring
-- Machine learning-based conversation classification
-- Sentiment analysis on email threads
+Run the application:
+```bash
+python -m video_editor.main
+```
+
+Or directly:
+```bash
+python video_editor/main.py
+```
+
+## Extending the Application
+
+### Adding New Task Types
+
+1. Define a new task handler in `task_manager.py`:
+```python
+def my_custom_handler(task: Task) -> TaskResult:
+    # Your processing logic
+    return TaskResult(success=True, task_id=task.task_id)
+
+# Register the handler
+task_manager.register_handler(TaskType.CUSTOM, my_custom_handler)
+```
+
+### Adding New Media Operations
+
+Extend `MediaProcessor` with new methods:
+```python
+def my_operation(self, input_file, output_file, **options):
+    ffmpeg_args = [...]  # Build FFmpeg arguments
+    return self._engine.execute(
+        process_id="my_op",
+        input_file=input_file,
+        output_file=output_file,
+        ffmpeg_args=ffmpeg_args
+    )
+```
 
 ## License
 
-MIT
+MIT License
